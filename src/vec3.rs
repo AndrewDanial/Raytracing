@@ -5,6 +5,9 @@ pub struct Vec3 {
     e: Vec<f64>,
 }
 
+pub type point3 = Vec3;
+pub type color = Vec3;
+
 impl Vec3 {
     pub fn new(e0: f64, e1: f64, e2: f64) -> Self {
         Self {
@@ -115,11 +118,20 @@ impl ops::Div<f64> for Vec3 {
     }
 }
 
-pub fn dot(u: Vec3, v: Vec3) -> f64 {
-    u.e[0] * v.e[0] + u.e[1] * v.e[1] + v.e[2] * v.e[2]
+impl ops::Neg for Vec3 {
+    type Output = Vec3;
+    fn neg(self) -> Self::Output {
+        Vec3 {
+            e: vec![-self.e[0], -self.e[1], -self.e[2]],
+        }
+    }
 }
 
-pub fn cross(u: Vec3, v: Vec3) -> Vec3 {
+pub fn dot(u: &Vec3, v: &Vec3) -> f64 {
+    u.e[0] * v.e[0] + u.e[1] * v.e[1] + u.e[2] * v.e[2]
+}
+
+pub fn cross(u: &Vec3, v: &Vec3) -> Vec3 {
     Vec3::new(
         u.e[1] * v.e[2] - u.e[2] * v.e[1],
         u.e[2] * v.e[0] - u.e[0] * v.e[2],
@@ -131,7 +143,7 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
     v.clone() / v.length()
 }
 
-pub fn write_color(pixel_color: Vec3) {
+pub fn write_color(pixel_color: &color) {
     let ir = (255.99 * pixel_color.x()) as i32;
     let ig = (255.99 * pixel_color.y()) as i32;
     let ib = (255.99 * pixel_color.z()) as i32;

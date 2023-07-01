@@ -1,3 +1,3 @@
 # Raytracing!
 
-![](image.ppm)
+![](image.png)
