@@ -1,10 +1,12 @@
 #![allow(warnings)]
+mod camera;
 mod hittable;
 mod hittable_list;
 mod ray;
 mod rtweekend;
 mod sphere;
 mod vec3;
+use camera::*;
 use hittable::*;
 use hittable_list::*;
 use ray::*;
@@ -13,52 +15,58 @@ use sphere::*;
 use std::rc::Rc;
 use vec3::*;
 
-const ASPECT_RATIO: f64 = 16.0 / 9.0;
-const IMAGE_WIDTH: u32 = 400;
-const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
+use crate::rtweekend::random_double;
 
-fn ray_color(r: &Ray, world: &impl Hittable) -> color {
-    let mut rec = HitRecord::new();
-    if world.hit(r, 0.0, INFINITY, &mut rec) {
-        return 0.5 * (rec.normal + color::new(1.0, 1.0, 1.0));
+fn ray_color(r: &Ray, world: &impl Hittable, depth: i32) -> Color {
+    let mut rec: HitRecord = HitRecord::new();
+
+    // If we've exceeded the ray bounce limit, no more light is gathered
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+    if world.hit(r, 0.001, INFINITY, &mut rec) {
+        let target = rec.clone().p + rec.clone().normal + random_unit_vector();
+        return 0.5
+            * ray_color(
+                &Ray::new(&rec.clone().p, &(target - rec.clone().p)),
+                world,
+                depth - 1,
+            );
     }
     let unit_direction = unit_vector(&r.direction());
     let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * color::new(1.0, 1.0, 1.0) + t * color::new(0.5, 0.7, 1.0)
+    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
+    // Image
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width: u32 = 400;
+    let image_height: u32 = (image_width as f64 / aspect_ratio) as u32;
+    let samples_per_pixel = 100;
+    let depth = 50;
     // World
-
     let mut world = HittableList::new();
-    world.add(Rc::new(Sphere::new(point3::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Rc::new(Sphere::new(point3::new(0.0, -100.5, 1.0), 100.0)));
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Rc::new(Sphere::new(Point3::new(0.0, -100.5, 1.0), 100.0)));
+
     // Camera
+    let cam = Camera::new();
+    // Render
 
-    let viewport_height = 2.0;
-    let viewport_width = ASPECT_RATIO * viewport_height;
-    let focal_length = 1.0;
+    println!("P3\n{image_width} {image_height}\n255");
 
-    let origin = point3::new(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    let lower_left_corner = origin.clone()
-        - horizontal.clone() / 2.
-        - vertical.clone() / 2.
-        - Vec3::new(0.0, 0.0, focal_length);
-
-    println!("P3\n{IMAGE_WIDTH} {IMAGE_HEIGHT}\n255");
-
-    for j in (0..IMAGE_HEIGHT).rev() {
+    for j in (0..image_height).rev() {
         eprintln!("\rScanlines remaining: {j} ");
-        for i in 0..IMAGE_WIDTH {
-            let u = i as f64 / (IMAGE_WIDTH as f64 - 1.);
-            let v = j as f64 / (IMAGE_HEIGHT as f64 - 1.);
-            let dir = lower_left_corner.clone() + u * horizontal.clone() + v * vertical.clone()
-                - origin.clone();
-            let r = Ray::new(&origin, &dir);
-            let pixel_color = ray_color(&r, &world);
-            write_color(&pixel_color);
+        for i in 0..image_width {
+            let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+            for _ in 0..samples_per_pixel {
+                let u = (i as f64 + random_double()) / (image_width as f64 - 1.);
+                let v = (j as f64 + random_double()) / (image_height as f64 - 1.);
+                let r = cam.get_ray(u, v);
+                pixel_color += ray_color(&r, &world, depth);
+            }
+            write_color(&pixel_color, samples_per_pixel);
         }
     }
 

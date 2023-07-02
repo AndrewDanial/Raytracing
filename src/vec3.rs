@@ -1,12 +1,14 @@
 use std::{io::Write, ops};
 
-#[derive(Debug, Clone)]
+use crate::rtweekend::{random_double, random_double_range};
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Vec3 {
     e: Vec<f64>,
 }
 
-pub type point3 = Vec3;
-pub type color = Vec3;
+pub type Point3 = Vec3;
+pub type Color = Vec3;
 
 impl Vec3 {
     pub fn new(e0: f64, e1: f64, e2: f64) -> Self {
@@ -32,7 +34,28 @@ impl Vec3 {
     }
 
     pub fn length_squared(&self) -> f64 {
-        return self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2];
+        self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
+    }
+
+    pub fn random() -> Vec3 {
+        Vec3 {
+            e: vec![random_double(), random_double(), random_double()],
+        }
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Vec3 {
+        Vec3 {
+            e: vec![
+                random_double_range(min, max),
+                random_double_range(min, max),
+                random_double_range(min, max),
+            ],
+        }
+    }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.e[0].abs() < s && self.e[1].abs() < s && self.e[2].abs() < s
     }
 }
 
@@ -143,10 +166,44 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
     v.clone() / v.length()
 }
 
-pub fn write_color(pixel_color: &color) {
-    let ir = (255.99 * pixel_color.x()) as i32;
-    let ig = (255.99 * pixel_color.y()) as i32;
-    let ib = (255.99 * pixel_color.z()) as i32;
+pub fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let p = Vec3::random_range(-1.0, 1.0);
+        if p.length_squared() >= 1.0 {
+            continue;
+        }
+        return p;
+    }
+}
+
+pub fn random_unit_vector() -> Vec3 {
+    unit_vector(&random_in_unit_sphere())
+}
+
+pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
+    let in_unit_sphere = random_in_unit_sphere();
+    if (dot(&in_unit_sphere, normal) > 0.0) {
+        return in_unit_sphere;
+    } else {
+        return -in_unit_sphere;
+    }
+}
+
+pub fn write_color(pixel_color: &Color, samples_per_pixel: i32) {
+    let mut r = pixel_color.x();
+    let mut g = pixel_color.y();
+    let mut b = pixel_color.z();
+    // Divide color by number of samples
+    let scale = 1.0 / samples_per_pixel as f64;
+    r = (r * scale).sqrt();
+    g = (g * scale).sqrt();
+    b = (b * scale).sqrt();
+
+    // Write the translated [0, 255] value of each color component
+    let ir = (256.0 * r.clamp(0.0, 0.999)) as i32;
+    let ig = (256.0 * g.clamp(0.0, 0.999)) as i32;
+    let ib = (256.0 * b.clamp(0.0, 0.999)) as i32;
     let mut out = std::io::stdout();
-    out.write_fmt(format_args!("{} {} {}\n", ir, ig, ib));
+    out.write_fmt(format_args!("{} {} {}\n", ir, ig, ib))
+        .unwrap();
 }

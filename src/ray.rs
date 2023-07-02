@@ -1,19 +1,20 @@
-use crate::vec3::{color, point3, Vec3};
+use crate::vec3::{Point3, Vec3};
 
+#[derive(Debug, Clone)]
 pub struct Ray {
-    orig: point3,
+    orig: Point3,
     dir: Vec3,
 }
 
 impl Ray {
-    pub fn new(origin: &point3, direction: &Vec3) -> Self {
+    pub fn new(origin: &Point3, direction: &Vec3) -> Self {
         Ray {
             orig: origin.clone(),
             dir: direction.clone(),
         }
     }
 
-    pub fn origin(&self) -> point3 {
+    pub fn origin(&self) -> Point3 {
         self.orig.clone()
     }
 
@@ -21,7 +22,12 @@ impl Ray {
         self.dir.clone()
     }
 
-    pub fn at(&self, t: f64) -> point3 {
+    pub fn at(&self, t: f64) -> Point3 {
         self.orig.clone() + t * self.dir.clone()
+    }
+
+    pub fn set(&mut self, other: &Ray) {
+        self.orig = other.clone().orig;
+        self.dir = other.clone().dir;
     }
 }

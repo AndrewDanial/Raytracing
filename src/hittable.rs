@@ -1,8 +1,8 @@
 use crate::ray::Ray;
-use crate::vec3::{dot, point3, Vec3};
+use crate::vec3::{dot, Point3, Vec3};
 #[derive(Debug, Clone)]
 pub struct HitRecord {
-    pub p: point3,
+    pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
@@ -21,7 +21,6 @@ impl HitRecord {
             front_face: false,
         }
     }
-
     pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3) {
         self.front_face = dot(&r.direction(), outward_normal) < 0.0;
         self.normal = if self.front_face {
@@ -31,9 +30,9 @@ impl HitRecord {
         }
     }
 
-    pub fn set(&mut self, other: HitRecord) {
-        self.p = other.p;
-        self.normal = other.normal;
+    pub fn set(&mut self, other: &HitRecord) {
+        self.p = other.p.clone();
+        self.normal = other.normal.clone();
         self.t = other.t;
         self.front_face = other.front_face
     }
