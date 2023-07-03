@@ -1,10 +1,12 @@
+use crate::material::{Lambertian, Material, Metal};
 use crate::ray::Ray;
-use crate::vec3::{dot, Point3, Vec3};
-#[derive(Debug, Clone)]
+use crate::vec3::{dot, Color, Point3, Vec3};
+use std::rc::Rc;
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
+    pub material: Rc<dyn Material>,
     pub front_face: bool,
 }
 
@@ -18,22 +20,24 @@ impl HitRecord {
             p: Vec3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
             t: 0.0,
+            material: Rc::new(Lambertian::new(&Color::new(0.0, 0.0, 0.0))),
             front_face: false,
         }
     }
     pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3) {
         self.front_face = dot(&r.direction(), outward_normal) < 0.0;
         self.normal = if self.front_face {
-            outward_normal.clone()
+            *outward_normal
         } else {
-            -outward_normal.clone()
+            -*outward_normal
         }
     }
 
     pub fn set(&mut self, other: &HitRecord) {
-        self.p = other.p.clone();
-        self.normal = other.normal.clone();
+        self.p = other.p;
+        self.normal = other.normal;
         self.t = other.t;
+        self.material = other.material.clone();
         self.front_face = other.front_face
     }
 }

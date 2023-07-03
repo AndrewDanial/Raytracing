@@ -9,25 +9,25 @@ pub struct Ray {
 impl Ray {
     pub fn new(origin: &Point3, direction: &Vec3) -> Self {
         Ray {
-            orig: origin.clone(),
-            dir: direction.clone(),
+            orig: *origin,
+            dir: *direction,
         }
     }
 
     pub fn origin(&self) -> Point3 {
-        self.orig.clone()
+        self.orig
     }
 
     pub fn direction(&self) -> Vec3 {
-        self.dir.clone()
+        self.dir
     }
 
     pub fn at(&self, t: f64) -> Point3 {
-        self.orig.clone() + t * self.dir.clone()
+        self.orig + t * self.dir
     }
 
     pub fn set(&mut self, other: &Ray) {
-        self.orig = other.clone().orig;
-        self.dir = other.clone().dir;
+        self.orig = other.orig;
+        self.dir = other.dir;
     }
 }

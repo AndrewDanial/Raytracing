@@ -2,9 +2,11 @@ use std::{io::Write, ops};
 
 use crate::rtweekend::{random_double, random_double_range};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
-    e: Vec<f64>,
+    e0: f64,
+    e1: f64,
+    e2: f64,
 }
 
 pub type Point3 = Vec3;
@@ -12,21 +14,19 @@ pub type Color = Vec3;
 
 impl Vec3 {
     pub fn new(e0: f64, e1: f64, e2: f64) -> Self {
-        Self {
-            e: vec![e0, e1, e2],
-        }
+        Self { e0, e1, e2 }
     }
 
     pub fn x(&self) -> f64 {
-        self.e[0]
+        self[0]
     }
 
     pub fn y(&self) -> f64 {
-        self.e[1]
+        self[1]
     }
 
     pub fn z(&self) -> f64 {
-        self.e[2]
+        self[2]
     }
 
     pub fn length(&self) -> f64 {
@@ -34,44 +34,50 @@ impl Vec3 {
     }
 
     pub fn length_squared(&self) -> f64 {
-        self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]
+        self[0] * self[0] + self[1] * self[1] + self[2] * self[2]
     }
 
     pub fn random() -> Vec3 {
         Vec3 {
-            e: vec![random_double(), random_double(), random_double()],
+            e0: random_double(),
+            e1: random_double(),
+            e2: random_double(),
         }
     }
 
     pub fn random_range(min: f64, max: f64) -> Vec3 {
         Vec3 {
-            e: vec![
-                random_double_range(min, max),
-                random_double_range(min, max),
-                random_double_range(min, max),
-            ],
+            e0: random_double_range(min, max),
+            e1: random_double_range(min, max),
+            e2: random_double_range(min, max),
         }
     }
 
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;
-        self.e[0].abs() < s && self.e[1].abs() < s && self.e[2].abs() < s
+        self[0].abs() < s && self[1].abs() < s && self[2].abs() < s
+    }
+
+    pub fn set(&mut self, other: &Vec3) {
+        self[0] = other[0];
+        self[1] = other[1];
+        self[2] = other[2];
     }
 }
 
 impl ops::AddAssign<Vec3> for Vec3 {
     fn add_assign(&mut self, rhs: Vec3) {
-        self.e[0] += rhs.e[0];
-        self.e[1] += rhs.e[1];
-        self.e[2] += rhs.e[2];
+        self[0] += rhs[0];
+        self[1] += rhs[1];
+        self[2] += rhs[2];
     }
 }
 
 impl ops::MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, rhs: f64) {
-        self.e[0] *= rhs;
-        self.e[1] *= rhs;
-        self.e[2] *= rhs;
+        self[0] *= rhs;
+        self[1] *= rhs;
+        self[2] *= rhs;
     }
 }
 
@@ -85,11 +91,7 @@ impl ops::Add<Vec3> for Vec3 {
     type Output = Vec3;
 
     fn add(self, rhs: Vec3) -> Vec3 {
-        Vec3::new(
-            self.e[0] + rhs.e[0],
-            self.e[1] + rhs.e[1],
-            self.e[2] + rhs.e[2],
-        )
+        Vec3::new(self[0] + rhs[0], self[1] + rhs[1], self[2] + rhs[2])
     }
 }
 
@@ -97,11 +99,7 @@ impl ops::Sub<Vec3> for Vec3 {
     type Output = Vec3;
 
     fn sub(self, rhs: Vec3) -> Vec3 {
-        Vec3::new(
-            self.e[0] - rhs.e[0],
-            self.e[1] - rhs.e[1],
-            self.e[2] - rhs.e[2],
-        )
+        Vec3::new(self[0] - rhs[0], self[1] - rhs[1], self[2] - rhs[2])
     }
 }
 
@@ -109,11 +107,7 @@ impl ops::Mul<Vec3> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, rhs: Vec3) -> Vec3 {
-        Vec3::new(
-            self.e[0] * rhs.e[0],
-            self.e[1] * rhs.e[1],
-            self.e[2] * rhs.e[2],
-        )
+        Vec3::new(self[0] * rhs[0], self[1] * rhs[1], self[2] * rhs[2])
     }
 }
 
@@ -121,7 +115,7 @@ impl ops::Mul<f64> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, rhs: f64) -> Vec3 {
-        Vec3::new(self.e[0] * rhs, self.e[1] * rhs, self.e[2] * rhs)
+        Vec3::new(self[0] * rhs, self[1] * rhs, self[2] * rhs)
     }
 }
 
@@ -145,25 +139,50 @@ impl ops::Neg for Vec3 {
     type Output = Vec3;
     fn neg(self) -> Self::Output {
         Vec3 {
-            e: vec![-self.e[0], -self.e[1], -self.e[2]],
+            e0: -self[0],
+            e1: -self[1],
+            e2: -self[2],
+        }
+    }
+}
+
+impl ops::Index<usize> for Vec3 {
+    type Output = f64;
+    fn index(&self, index: usize) -> &f64 {
+        match index {
+            0 => &self.e0,
+            1 => &self.e1,
+            2 => &self.e2,
+            _ => panic!("Out of bounds"),
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Vec3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.e0,
+            1 => &mut self.e1,
+            2 => &mut self.e2,
+            _ => panic!("Out of bounds"),
         }
     }
 }
 
 pub fn dot(u: &Vec3, v: &Vec3) -> f64 {
-    u.e[0] * v.e[0] + u.e[1] * v.e[1] + u.e[2] * v.e[2]
+    u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
 }
 
 pub fn cross(u: &Vec3, v: &Vec3) -> Vec3 {
     Vec3::new(
-        u.e[1] * v.e[2] - u.e[2] * v.e[1],
-        u.e[2] * v.e[0] - u.e[0] * v.e[2],
-        u.e[0] * v.e[1] - u.e[1] * v.e[0],
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
     )
 }
 
 pub fn unit_vector(v: &Vec3) -> Vec3 {
-    v.clone() / v.length()
+    *v / v.length()
 }
 
 pub fn random_in_unit_sphere() -> Vec3 {
@@ -187,6 +206,10 @@ pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
     } else {
         return -in_unit_sphere;
     }
+}
+
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    *v - 2.0 * dot(v, n) * *n
 }
 
 pub fn write_color(pixel_color: &Color, samples_per_pixel: i32) {

@@ -3,7 +3,7 @@ use crate::ray::Ray;
 use std::rc::Rc;
 
 pub struct HittableList {
-    objects: Vec<Rc<dyn Hittable>>,
+    pub objects: Vec<Rc<dyn Hittable>>,
 }
 
 impl HittableList {
