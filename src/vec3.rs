@@ -212,6 +212,13 @@ pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     *v - 2.0 * dot(v, n) * *n
 }
 
+pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+    let cos_theta = f64::min(dot(&-(*uv), n), 1.0);
+    let r_out_perp = etai_over_etat * ((*uv) + cos_theta * (*n));
+    let r_out_parallel = -(1.0 - r_out_perp.length_squared().abs()).sqrt() * *n;
+    r_out_perp + r_out_parallel
+}
+
 pub fn write_color(pixel_color: &Color, samples_per_pixel: i32) {
     let mut r = pixel_color.x();
     let mut g = pixel_color.y();
@@ -229,4 +236,18 @@ pub fn write_color(pixel_color: &Color, samples_per_pixel: i32) {
     let mut out = std::io::stdout();
     out.write_fmt(format_args!("{} {} {}\n", ir, ig, ib))
         .unwrap();
+}
+
+pub fn random_in_unit_disk() -> Vec3 {
+    loop {
+        let p = Vec3::new(
+            random_double_range(-1.0, 1.0),
+            random_double_range(-1.0, 1.0),
+            0.0,
+        );
+        if p.length_squared() >= 1.0 {
+            continue;
+        }
+        return p;
+    }
 }
